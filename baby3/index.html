@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Lost & Found | Campus Hub</title>
+
+  <meta name="description" content="Campus Lost & Found Portal by CodeXCrakes ❤️">
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind = window.tailwind || {};
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            accent: '#7c3aed',
+            accent2: '#22c55e'
+          }
+        }
+      }
+    };
+  </script>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    html { scroll-behavior: smooth; }
+    body { font-family: "Poppins", system-ui, -apple-system, "Segoe UI"; }
+  </style>
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-slate-200 antialiased">
+  <script>
+    if (localStorage.getItem("lf-login") !== "true") {
+      window.location.href = "login.html";
+    }
+  </script>
+
+  <!-- Header -->
+  <header class="sticky top-0 z-30 backdrop-blur-sm bg-white/5 border-b border-white/10">
+    <div class="max-w-6xl mx-auto px-4 md:px-6 flex items-center justify-between py-3">
+      <div class="flex items-center gap-4">
+        <h1 class="text-2xl md:text-3xl font-extrabold text-white">Q Found</h1>
+        <nav class="hidden sm:flex gap-4 ml-4">
+          <a href="#listingsTitle" class="text-slate-300 hover:text-accent2">Items</a>
+          <a href="#submitTitle" class="text-slate-300 hover:text-accent2">Report</a>
+          <a href="recycle-bin.html" class="text-slate-300 hover:text-accent2">Recycle Bin</a>
+        </nav>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button id="themeToggle"
+          class="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 flex items-center gap-2">
+          <span id="themeIcon">🌙</span>
+          <span class="hidden sm:block text-sm">Theme</span>
+        </button>
+
+        <button onclick="logout()"
+          class="px-3 py-2 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30">
+          Logout
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <script>
+    function logout() {
+      localStorage.removeItem("lf-login");
+      window.location.href = "login.html";
+    }
+  </script>
+
+  <!-- Main -->
+  <main class="max-w-6xl mx-auto px-4 md:px-6 mt-10 pb-12">
+
+    <div class="grid md:grid-cols-[1.2fr,0.8fr] gap-6">
+
+      <!-- LISTINGS -->
+      <section class="rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 shadow-lg p-6"
+        aria-labelledby="listingsTitle">
+
+        <h2 id="listingsTitle" class="text-xl font-semibold text-accent2">Recent Items</h2>
+
+        <div class="mt-4 flex gap-3">
+          <input id="q" type="text" placeholder="Search items..."
+            class="flex-1 bg-white/10 border border-white/10 rounded-lg px-4 py-2"
+          />
+          <button id="clearSearch"
+            class="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20">
+            Clear
+          </button>
+        </div>
+
+        <div id="list" class="mt-6 grid gap-4"></div>
+
+        <div id="emptyState"
+          class="text-center text-slate-400 mt-6 p-6 rounded-lg bg-white/5">
+          No items yet — report one!
+        </div>
+      </section>
+
+      <!-- FORM -->
+      <section class="rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 p-6"
+        aria-labelledby="submitTitle">
+
+        <h2 id="submitTitle" class="text-xl font-semibold text-accent2">Report an Item</h2>
+
+        <div class="mt-4 flex gap-3">
+          <button id="tabLost" class="typeTab flex-1 py-2 rounded-lg bg-white/10 hover:bg-white/20 font-semibold">Lost</button>
+          <button id="tabFound" class="typeTab flex-1 py-2 rounded-lg bg-white/10 hover:bg-white/20 font-semibold">Found</button>
+        </div>
+
+        <form id="itemForm" autocomplete="off" class="mt-4 space-y-3">
+          <input type="hidden" id="type" name="type" value="lost" />
+
+          <div>
+            <label class="block text-sm mb-1">Title *</label>
+            <input id="title" name="title" required class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2" />
+          </div>
+
+          <div>
+            <label class="block text-sm mb-1">Category *</label>
+            <select id="category" name="category" required
+              class="w-full bg-slate-800 border border-white/20 rounded-lg px-3 py-2 text-white">
+              <option value="">Select...</option>
+              <option>Electronics</option>
+              <option>Accessories</option>
+              <option>Clothing</option>
+              <option>ID / Cards</option>
+              <option>Books</option>
+              <option>Other</option>
+            </select>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm mb-1">Date *</label>
+              <input id="date" name="date" type="date" required
+                class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2" />
+            </div>
+            <div>
+              <label class="block text-sm mb-1">Location *</label>
+              <input id="location" name="location" required
+                class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm mb-1">Description *</label>
+            <textarea id="description" name="description" rows="4" required
+              class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2"></textarea>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm mb-1">Your Name *</label>
+              <input id="contactName" name="contactName" required
+                class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2" />
+            </div>
+            <div>
+              <label class="block text-sm mb-1">Contact *</label>
+              <input id="contact" name="contact" required
+                class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm mb-1">Photo (optional)</label>
+            <input id="photo" name="photo" type="file" accept="image/*"
+              class="w-full text-sm file:bg-white/10 file:border file:border-white/20 file:px-3 file:py-1 file:rounded" />
+          </div>
+
+          <button type="submit"
+            class="w-full bg-gradient-to-r from-accent to-indigo-600 text-white py-2 rounded-lg font-semibold">
+            Post Item
+          </button>
+
+          <p id="formMsg" class="text-center text-sm mt-3"></p>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="mt-8">
+    <div class="max-w-6xl mx-auto px-4 md:px-6 text-center py-6 bg-white/10 rounded-xl border border-white/10">
+      Made with ❤️ by <b class="text-white">CodeXCrakes</b>
+    </div>
+  </footer>
+
+  <!-- ITEM TEMPLATE (NO DELETE BUTTON) -->
+  <template id="itemTpl">
+    <div class="flex gap-4 items-start bg-white/10 border border-white/20 p-4 rounded-xl">
+      <div class="w-20 h-20 rounded-lg overflow-hidden bg-slate-700/40">
+        <img src="" class="w-full h-full object-cover">
+      </div>
+      <div class="flex-1">
+        <div class="title text-lg font-semibold"></div>
+        <div class="meta text-sm text-slate-300 mt-1"></div>
+        <p class="desc mt-3 text-sm text-slate-200"></p>
+
+        <label class="inline-flex items-center gap-2 text-sm mt-3 text-slate-300">
+          <input type="checkbox" class="foundCheck" />
+          <span>Mark as Found</span>
+        </label>
+      </div>
+    </div>
+  </template>
+
+  <!-- MAIN APP (clean, no admin logic) -->
+  <script>
+  (function app() {
+    const $ = (s, r = document) => r.querySelector(s);
+    const storeKey = 'lost-found-v2';
+    const readStore = () => JSON.parse(localStorage.getItem(storeKey) || '[]');
+    const writeStore = (i) => localStorage.setItem(storeKey, JSON.stringify(i));
+
+    let items = readStore();
+
+    // Elements
+    const list = $('#list');
+    const empty = $('#emptyState');
+    const form = $('#itemForm');
+    const typeInput = $('#type');
+    const tabLost = $('#tabLost');
+    const tabFound = $('#tabFound');
+    const photo = $('#photo');
+    const formMsg = $('#formMsg');
+    const q = $('#q');
+    const clearSearch = $('#clearSearch');
+
+    // Tabs
+    function setType(t) {
+      typeInput.value = t;
+      tabLost.classList.toggle('bg-accent/20', t === 'lost');
+      tabFound.classList.toggle('bg-accent/20', t === 'found');
+    }
+
+    tabLost.onclick = () => setType('lost');
+    tabFound.onclick = () => setType('found');
+
+    // Render items
+    function render() {
+      list.innerHTML = '';
+      const query = (q.value || '').toLowerCase();
+
+      const filtered = items.filter(i =>
+        !query ||
+        (i.title && i.title.toLowerCase().includes(query)) ||
+        (i.location && i.location.toLowerCase().includes(query))
+      );
+
+      if (!filtered.length) {
+        empty.style.display = 'block';
+        return;
+      }
+
+      empty.style.display = 'none';
+
+      filtered.slice().reverse().forEach(i => {
+        const tpl = document.importNode($('#itemTpl').content, true);
+        tpl.querySelector('.title').textContent = `${i.type.toUpperCase()}: ${i.title}`;
+        tpl.querySelector('.desc').textContent = i.description;
+        tpl.querySelector('.meta').textContent =
+          `📍 ${i.location} • 📅 ${i.date} • 👤 ${i.contactName} • ☎ ${i.contact}`;
+
+        const img = tpl.querySelector('img');
+        img.src = i.photo || 'https://via.placeholder.com/160?text=%F0%9F%93%A6';
+
+        const check = tpl.querySelector('.foundCheck');
+        check.checked = i.resolved;
+
+        check.onchange = () => {
+          i.resolved = check.checked;
+          writeStore(items);
+          render();
+        };
+
+        list.appendChild(tpl);
+      });
+    }
+
+    // Submit handler
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const fd = new FormData(form);
+      const obj = Object.fromEntries(fd.entries());
+
+      // Photo (optional)
+      let photoStr = '';
+      if (photo.files[0]) {
+        photoStr = await new Promise((res) => {
+          const fr = new FileReader();
+          fr.onload = () => res(fr.result);
+          fr.readAsDataURL(photo.files[0]);
+        });
+      }
+
+      const item = {
+        ...obj,
+        id: Math.random().toString(36).slice(2),
+        photo: photoStr,
+        resolved: false,
+        createdAt: Date.now()
+      };
+
+      items.push(item);
+      writeStore(items);
+
+      form.reset();
+      setType('lost');
+
+      formMsg.textContent = 'Item posted successfully!';
+      formMsg.classList.add('text-green-400');
+      setTimeout(() => formMsg.textContent = '', 3000);
+
+      render();
+    });
+
+    q.oninput = render;
+    clearSearch.onclick = () => { q.value = ''; render(); };
+
+    // Initial render
+    setType('lost');
+    render();
+  })();
+  </script>
+
+  <!-- Theme Logic -->
+  <script>
+    (function initTheme() {
+      const html = document.documentElement;
+      const themeToggle = document.getElementById('themeToggle');
+      const themeIcon = document.getElementById('themeIcon');
+
+      function applyTheme(mode) {
+        if (mode === 'dark') {
+          html.classList.add('dark');
+          themeIcon.textContent = '☀️';
+        } else {
+          html.classList.remove('dark');
+          themeIcon.textContent = '🌙';
+        }
+      }
+
+      const saved = localStorage.getItem('lf-theme') || 'light';
+      applyTheme(saved);
+
+      themeToggle.onclick = () => {
+        const next = html.classList.contains('dark') ? 'light' : 'dark';
+        localStorage.setItem('lf-theme', next);
+        applyTheme(next);
+      };
+    })();
+  </script>
+
+</body>
+</html>

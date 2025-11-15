@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login | Lost & Found</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind = window.tailwind || {};
+    tailwind.config = { darkMode: "class" };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    body { font-family: "Poppins", sans-serif; }
+    html, body { transition: 0.25s all ease; }
+  </style>
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-slate-200 flex items-center justify-center px-4">
+  
+  <!-- LOGIN CARD -->
+  <div class="w-full max-w-md p-8 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-xl">
+    
+    <h2 class="text-3xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-green-400">
+      Lost & Found Login
+    </h2>
+
+    <p class="text-center text-slate-300 mt-2">Admin access required</p>
+
+    <form id="loginForm" class="mt-8 space-y-4">
+      
+      <div>
+        <label class="text-sm font-semibold">Username</label>
+        <input id="username" type="text" required
+          class="w-full mt-1 px-4 py-2 bg-white/10 border border-white/20 rounded-lg focus:ring-2 focus:ring-green-400 outline-none" />
+      </div>
+
+      <div>
+        <label class="text-sm font-semibold">Password</label>
+        <input id="password" type="password" required
+          class="w-full mt-1 px-4 py-2 bg-white/10 border border-white/20 rounded-lg focus:ring-2 focus:ring-green-400 outline-none" />
+      </div>
+
+      <button type="submit"
+        class="w-full py-2 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-500 hover:opacity-90 transition text-white font-semibold">
+        Login
+      </button>
+
+      <p id="loginMsg" class="text-center text-sm mt-3"></p>
+    </form>
+
+    <!-- THEME TOGGLE -->
+    <button id="themeToggle" class="mt-6 w-full py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white">
+      🌙 Toggle Theme
+    </button>
+
+  </div>
+
+  <script>
+    // THEME HANDLER
+    const html = document.documentElement;
+    const themeToggle = document.getElementById("themeToggle");
+    const saved = localStorage.getItem("lf-theme");
+
+    if (saved === "dark") html.classList.add("dark");
+    themeToggle.addEventListener("click", () => {
+      html.classList.toggle("dark");
+      localStorage.setItem("lf-theme", html.classList.contains("dark") ? "dark" : "light");
+    });
+
+    // LOGIN SYSTEM
+    const ADMIN_USER = "admin";
+    const ADMIN_PASS = "admin123";
+
+    document.getElementById("loginForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const u = username.value.trim();
+      const p = password.value.trim();
+      const msg = document.getElementById("loginMsg");
+
+      if (u === ADMIN_USER && p === ADMIN_PASS) {
+        localStorage.setItem("lf-login", "true");
+        msg.textContent = "Login successful! Redirecting...";
+        msg.classList.add("text-green-400");
+
+        setTimeout(() => {
+          window.location.href = "index.html"; // your main page
+        }, 800);
+      } else {
+        msg.textContent = "Invalid username or password";
+        msg.classList.add("text-red-400");
+      }
+    });
+  </script>
+
+</body>
+</html>

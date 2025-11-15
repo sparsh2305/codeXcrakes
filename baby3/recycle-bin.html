@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Recycle Bin | Lost & Found</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style> body { font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; } </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-slate-200 antialiased">
+  <header class="sticky top-0 z-30 backdrop-blur-sm bg-white/5 dark:bg-slate-900/60 border-b border-white/6">
+    <div class="max-w-6xl mx-auto px-4 md:px-6 flex items-center justify-between gap-4 py-3">
+      <div class="flex items-center gap-4">
+        <h1 class="text-2xl font-extrabold text-white">Recycle Bin</h1>
+        <a href="index.html" class="text-slate-300 hover:text-accent2 transition">Back to Items</a>
+      </div>
+      <div class="flex items-center gap-3">
+        <button id="emptyBtn" class="px-3 py-2 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 transition">Empty Recycle Bin</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 md:px-6 mt-10 pb-12">
+    <section class="rounded-2xl bg-white/500 backdrop-blur-md border border-white/500 shadow-lg p-6">
+      <h2 class="text-xl font-semibold text-accent2">Deleted Items</h2>
+      <div id="list" class="mt-6 grid gap-4"></div>
+      <div id="empty" class="text-slate-400 mt-6 p-6 rounded-lg bg-white/3 text-center">Recycle bin empty.</div>
+    </section>
+  </main>
+
+  <footer class="mt-8">
+    <div class="max-w-6xl mx-auto px-4 md:px-6 text-center py-6 bg-white/400 rounded-2xl border border-white/6">
+      Made with <span class="text-red-400">❤️</span> by CodeXCrakes
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      const deletedKey = 'lost-found-deleted';
+      const storeKey = 'lost-found-v2';
+      const ADMIN_PASSWORD = 'codexadmin'; // keep in sync with index.html or change both
+
+      const readDeleted = () => { try { return JSON.parse(localStorage.getItem(deletedKey) || '[]'); } catch (e) { return []; } };
+      const writeDeleted = (i) => localStorage.setItem(deletedKey, JSON.stringify(i));
+      const readStore = () => { try { return JSON.parse(localStorage.getItem(storeKey) || '[]'); } catch (e) { return []; } };
+      const writeStore = (i) => localStorage.setItem(storeKey, JSON.stringify(i));
+
+      let deleted = readDeleted();
+      const list = document.getElementById('list');
+      const empty = document.getElementById('empty');
+      const emptyBtn = document.getElementById('emptyBtn');
+
+      function render() {
+        list.innerHTML = '';
+        if (!deleted.length) {
+          empty.style.display = 'block';
+          return;
+        }
+        empty.style.display = 'none';
+
+        deleted.slice().reverse().forEach(item => {
+          const card = document.createElement('div');
+          card.className = 'flex gap-4 items-start bg-white/6 border border-white/8 p-4 rounded-xl';
+
+          const imgWrap = document.createElement('div');
+          imgWrap.className = 'w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-slate-700/30';
+          const img = document.createElement('img');
+          img.src = item.photo || 'https://via.placeholder.com/160?text=%F0%9F%93%A6';
+          img.className = 'w-full h-full object-cover';
+          imgWrap.appendChild(img);
+
+          const body = document.createElement('div');
+          body.className = 'flex-1';
+          const title = document.createElement('div');
+          title.className = 'text-lg font-semibold';
+          title.textContent = item.title;
+          const meta = document.createElement('div');
+          meta.className = 'text-sm text-slate-300 mt-1';
+          meta.textContent = `📍 ${item.location} • 📅 ${item.date} • Deleted: ${new Date(item.deletedAt).toLocaleString()}`;
+          const desc = document.createElement('p');
+          desc.className = 'mt-3 text-sm text-slate-200';
+          desc.textContent = item.description;
+
+          const actions = document.createElement('div');
+          actions.className = 'mt-3 flex items-center gap-3';
+          const restoreBtn = document.createElement('button');
+          restoreBtn.className = 'px-3 py-1 rounded-lg bg-green-500/20 text-green-300 hover:bg-green-500/30 text-sm';
+          restoreBtn.textContent = 'Restore';
+          const permBtn = document.createElement('button');
+          permBtn.className = 'px-3 py-1 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 text-sm';
+          permBtn.textContent = 'Delete Permanently';
+
+          actions.appendChild(restoreBtn);
+          actions.appendChild(permBtn);
+          body.appendChild(title);
+          body.appendChild(meta);
+          body.appendChild(desc);
+          body.appendChild(actions);
+          card.appendChild(imgWrap);
+          card.appendChild(body);
+          list.appendChild(card);
+
+          // Restore action: moves item back to active store
+          restoreBtn.addEventListener('click', () => {
+            if (!confirm('Restore this item to active listings?')) return;
+            const active = readStore();
+            active.push(item);
+            writeStore(active);
+            deleted = deleted.filter(d => d.id !== item.id);
+            writeDeleted(deleted);
+            render();
+            alert('Item restored.');
+          });
+
+          // Permanent delete: confirm then remove from deleted store
+          permBtn.addEventListener('click', () => {
+            const pw = prompt('Enter admin password to permanently delete:');
+            if (pw !== ADMIN_PASSWORD) { alert('Wrong password.'); return; }
+            if (!confirm('Permanently delete this item? This cannot be undone.')) return;
+            deleted = deleted.filter(d => d.id !== item.id);
+            writeDeleted(deleted);
+            render();
+            alert('Item permanently deleted.');
+          });
+        });
+      }
+
+      // Empty recycle bin
+      emptyBtn.addEventListener('click', () => {
+        const pw = prompt('Enter admin password to empty recycle bin:');
+        if (pw !== ADMIN_PASSWORD) { alert('Wrong password.'); return; }
+        if (!confirm('Empty the entire Recycle Bin? This will permanently delete all items.')) return;
+        deleted = [];
+        writeDeleted(deleted);
+        render();
+        alert('Recycle Bin emptied.');
+      });
+
+      render();
+    })();
+  </script>
+</body>
+</html>

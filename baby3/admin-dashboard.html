@@ -1,0 +1,823 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin Dashboard | Lost & Found</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind (CDN - dev only) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root { --glass-bg: rgba(255,255,255,0.04); --panel-border: rgba(255,255,255,0.06); }
+    body { font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
+    .sidebar { min-width: 240px; max-width: 260px; }
+    .card-anim { transition: transform .18s ease, box-shadow .18s ease; }
+    .card-anim:hover { transform: translateY(-4px); }
+  </style>
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-slate-200 antialiased overflow-hidden">
+
+  <!-- TOPBAR -->
+  <header class="sticky top-0 z-50 bg-black/30 backdrop-blur-sm border-b border-white/6">
+    <div class="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <button id="toggleSidebar" class="md:hidden p-2 rounded bg-white/5">☰</button>
+        <h1 class="text-xl font-extrabold">Admin • Lost & Found</h1>
+        <nav class="hidden md:flex gap-4 ml-6 text-sm text-slate-300">
+          <a href="index.html" class="hover:text-accent2">Open Portal</a>
+          <a href="recycle-bin.html" class="hover:text-accent2">Recycle Bin</a>
+        </nav>
+      </div>
+
+      <button id="logoutBtn" class="px-3 py-1 rounded bg-red-600/20 text-red-200">Logout</button>
+    </div>
+  </header>
+
+  <!-- GRID LAYOUT -->
+  <div class="max-w-7xl mx-auto px-4 md:px-6 py-6 grid md:grid-cols-[260px,1fr] gap-6 h-[calc(100vh-80px)]">
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="sidebar rounded-2xl bg-[var(--glass-bg)] border border-[var(--panel-border)] p-4 overflow-auto max-h-full">
+      <div class="mb-6">
+        <div class="text-sm text-slate-300 mb-1">Signed in as</div>
+        <div class="text-white font-semibold">Admin</div>
+      </div>
+
+      <nav class="space-y-1">
+        <button data-tab="overview" class="tabBtn w-full text-left px-3 py-2 rounded-lg bg-accent/10 text-accent">Overview</button>
+        <button data-tab="items" class="tabBtn w-full text-left px-3 py-2 rounded-lg hover:bg-white/5">All Items</button>
+        <button data-tab="deleted" class="tabBtn w-full text-left px-3 py-2 rounded-lg hover:bg-white/5">Recycle Bin</button>
+        <button data-tab="settings" class="tabBtn w-full text-left px-3 py-2 rounded-lg hover:bg-white/5">Settings</button>
+      </nav>
+
+      <p class="mt-6 text-sm text-slate-400">Tip: Change admin password in Settings.</p>
+    </aside>
+
+    <!-- MAIN PANEL -->
+    <main class="rounded-2xl bg-[var(--glass-bg)] border border-[var(--panel-border)] shadow-xl p-6 overflow-auto max-h-full">
+
+      <!-- ========== TAB: OVERVIEW ========== -->
+      <section id="overview" class="tabPanel">
+
+        <!-- Stats -->
+        <div class="grid md:grid-cols-3 gap-4 mb-6">
+          <div class="p-4 bg-white/5 border border-white/6 rounded-2xl card-anim">
+            <div class="text-sm text-slate-300">Total Items</div>
+            <div id="statTotal" class="text-2xl font-bold mt-1">0</div>
+          </div>
+
+          <div class="p-4 bg-white/5 border border-white/6 rounded-2xl card-anim">
+            <div class="text-sm text-slate-300">Open / Unresolved</div>
+            <div id="statOpen" class="text-2xl font-bold mt-1">0</div>
+          </div>
+
+          <div class="p-4 bg-white/5 border border-white/6 rounded-2xl card-anim">
+            <div class="text-sm text-slate-300">Found / Resolved</div>
+            <div id="statFound" class="text-2xl font-bold mt-1">0</div>
+          </div>
+        </div>
+
+        <!-- Chart + Actions -->
+        <div class="grid md:grid-cols-2 gap-6 items-start">
+          <!-- Chart Card -->
+          <div class="p-4 bg-white/5 border border-white/6 rounded-2xl">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-semibold">Items by Category</h3>
+              <p class="text-sm text-slate-400">Updated: <span id="lastUpdated">—</span></p>
+            </div>
+
+            <!-- fixed height wrapper (important for Chart.js) -->
+            <div class="relative h-[260px]">
+              <canvas id="categoryChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="p-4 bg-white/5 border border-white/6 rounded-2xl">
+            <h3 class="font-semibold mb-3">Quick Actions</h3>
+            <div class="flex flex-col gap-3">
+              <button id="refreshBtn" class="px-4 py-2 bg-accent text-white rounded-lg">Refresh Data</button>
+              <button id="exportBtn" class="px-4 py-2 bg-white/6 rounded-lg">Export Items (JSON)</button>
+              <button id="importBtn" class="px-4 py-2 bg-white/6 rounded-lg">Import Items (JSON)</button>
+              <input id="importFile" type="file" accept="application/json" class="hidden" />
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- ========== TAB: ALL ITEMS ========== -->
+      <section id="items" class="tabPanel hidden">
+
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold">All Items</h2>
+
+          <div class="flex items-center gap-2">
+
+            <select id="filterType"
+              class="bg-white/10 border border-white/10 rounded px-2 py-1">
+              <option value="">All Types</option>
+              <option value="lost">Lost</option>
+              <option value="found">Found</option>
+            </select>
+
+            <select id="filterCategory"
+              class="bg-white/10 border border-white/10 rounded px-2 py-1">
+              <option value="">All Categories</option>
+            </select>
+
+            <input id="searchItems" placeholder="Search title/location..."
+              class="bg-white/10 border border-white/10 rounded px-2 py-1" />
+
+            <button id="clearFilters"
+              class="px-3 py-1 rounded bg-white/10">Clear</button>
+
+          </div>
+        </div>
+
+        <div id="itemsTable"
+          class="space-y-3 overflow-auto max-h-[60vh] pr-2"></div>
+
+      </section>
+
+      <!-- ========== TAB: RECYCLE BIN ========== -->
+      <section id="deleted" class="tabPanel hidden">
+
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold">Recycle Bin</h2>
+
+          <button id="emptyBin"
+            class="px-3 py-1 rounded bg-red-600/20">Empty Recycle Bin</button>
+        </div>
+
+        <div id="deletedList"
+          class="space-y-3 overflow-auto max-h-[60vh] pr-2"></div>
+
+      </section>
+
+      <!-- ========== TAB: SETTINGS ========== -->
+      <section id="settings" class="tabPanel hidden">
+
+        <h2 class="text-lg font-semibold mb-4">Settings</h2>
+
+        <!-- Password Change -->
+        <div class="bg-white/10 border border-white/10 p-4 rounded-2xl mb-4">
+
+          <h3 class="font-semibold mb-2">Admin Password</h3>
+          <p class="text-sm text-slate-300 mb-3">
+            Stored in <code>localStorage</code> as <b>lf-admin-pass</b>.
+          </p>
+
+          <div class="grid md:grid-cols-2 gap-3">
+            <input id="currentPass" type="password" placeholder="Current password"
+              class="bg-white/10 border border-white/10 rounded px-3 py-2" />
+
+            <input id="newPass" type="password" placeholder="New password"
+              class="bg-white/10 border border-white/10 rounded px-3 py-2" />
+
+            <input id="confirmPass" type="password" placeholder="Confirm new password"
+              class="bg-white/10 border border-white/10 rounded px-3 py-2" />
+
+            <button id="changePassBtn"
+              class="px-4 py-2 bg-accent text-white rounded-lg">
+              Change Password
+            </button>
+          </div>
+
+          <p id="passMsg" class="text-sm mt-3"></p>
+        </div>
+
+        <!-- Data Controls -->
+        <div class="bg-white/10 border border-white/10 p-4 rounded-2xl">
+          <h3 class="font-semibold mb-2">Data Management</h3>
+
+          <div class="flex gap-3">
+            <button id="downloadAllBtn"
+              class="px-4 py-2 rounded bg-white/10">Download All Data</button>
+
+            <button id="clearAllBtn"
+              class="px-4 py-2 rounded bg-red-600/20">Clear All Data</button>
+          </div>
+        </div>
+
+      </section>
+    </main>
+  </div>
+
+
+  <!-- ========== EDIT MODAL ========== -->
+  <div id="modal"
+    class="fixed inset-0 hidden items-center justify-center z-50">
+
+    <!-- Dimmed Background -->
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+
+    <!-- Modal Box -->
+    <div
+      class="relative w-full max-w-2xl p-6 rounded-2xl bg-white/10 border border-white/10 shadow-xl">
+
+      <h3 class="text-lg font-semibold mb-3">Edit Item</h3>
+
+      <form id="editForm" class="space-y-3">
+
+        <input type="hidden" id="editId" />
+
+        <div>
+          <label class="block text-sm mb-1">Title</label>
+          <input id="editTitle"
+            class="w-full bg-white/10 border border-white/10 px-3 py-2 rounded" />
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm mb-1">Date</label>
+            <input id="editDate" type="date"
+              class="w-full bg-white/10 border border-white/10 px-3 py-2 rounded" />
+          </div>
+
+          <div>
+            <label class="block text-sm mb-1">Location</label>
+            <input id="editLocation"
+              class="w-full bg-white/10 border border-white/10 px-3 py-2 rounded" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm mb-1">Category</label>
+          <input id="editCategory"
+            class="w-full bg-white/10 border border-white/10 px-3 py-2 rounded" />
+        </div>
+
+        <div>
+          <label class="block text-sm mb-1">Description</label>
+          <textarea id="editDesc" rows="4"
+            class="w-full bg-white/10 border border-white/10 px-3 py-2 rounded"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-3">
+          <button type="button" id="modalClose"
+            class="px-4 py-2 rounded bg-white/10">Cancel</button>
+
+          <button type="submit"
+            class="px-4 py-2 rounded bg-accent text-white">Save</button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+<script>
+/* ======================================================
+   FINAL ADMIN DASHBOARD JS — 100% FIXED & ORDERED
+   Dark Glass UI Edition
+====================================================== */
+
+(function () {
+
+  /* ------------------------------
+     STORAGE KEYS + HELPERS
+  ------------------------------ */
+  const STORE_KEY = "lost-found-v2";
+  const DELETED_KEY = "lost-found-deleted";
+  const PASS_KEY = "lf-admin-pass";
+  const DEFAULT_PASS = "codexadmin";
+
+  const readStore = () => JSON.parse(localStorage.getItem(STORE_KEY) || "[]");
+  const writeStore = (v) => localStorage.setItem(STORE_KEY, JSON.stringify(v));
+
+  const readDeleted = () => JSON.parse(localStorage.getItem(DELETED_KEY) || "[]");
+  const writeDeleted = (v) =>
+    localStorage.setItem(DELETED_KEY, JSON.stringify(v));
+
+  const readPass = () => localStorage.getItem(PASS_KEY) || DEFAULT_PASS;
+  const setPass = (p) => localStorage.setItem(PASS_KEY, p);
+
+  /* ------------------------------
+     ELEMENT SELECTORS
+  ------------------------------ */
+  const tabBtns = document.querySelectorAll(".tabBtn");
+  const panels = document.querySelectorAll(".tabPanel");
+  const logoutBtn = document.getElementById("logoutBtn");
+  const toggleSidebar = document.getElementById("toggleSidebar");
+  const sidebar = document.getElementById("sidebar");
+
+  // Overview stats
+  const statTotal = document.getElementById("statTotal");
+  const statOpen = document.getElementById("statOpen");
+  const statFound = document.getElementById("statFound");
+  const lastUpdated = document.getElementById("lastUpdated");
+
+  // 🎯 IMPORTANT: Chart canvas defined BEFORE renderOverview()
+  const ctxEl = document.getElementById("categoryChart");
+  const chartCtx = ctxEl.getContext("2d");
+  let categoryChart = null;
+
+  // Items list
+  const itemsTable = document.getElementById("itemsTable");
+  const filterType = document.getElementById("filterType");
+  const filterCategory = document.getElementById("filterCategory");
+  const searchItems = document.getElementById("searchItems");
+  const clearFilters = document.getElementById("clearFilters");
+
+  // Recycle bin
+  const deletedList = document.getElementById("deletedList");
+  const emptyBin = document.getElementById("emptyBin");
+
+  // Quick actions
+  const refreshBtn = document.getElementById("refreshBtn");
+  const exportBtn = document.getElementById("exportBtn");
+  const importBtn = document.getElementById("importBtn");
+  const importFile = document.getElementById("importFile");
+
+  // Settings
+  const currentPass = document.getElementById("currentPass");
+  const newPass = document.getElementById("newPass");
+  const confirmPass = document.getElementById("confirmPass");
+  const changePassBtn = document.getElementById("changePassBtn");
+  const passMsg = document.getElementById("passMsg");
+  const downloadAllBtn = document.getElementById("downloadAllBtn");
+  const clearAllBtn = document.getElementById("clearAllBtn");
+
+  // Edit modal
+  const modal = document.getElementById("modal");
+  const modalClose = document.getElementById("modalClose");
+  const editForm = document.getElementById("editForm");
+  const editId = document.getElementById("editId");
+  const editTitle = document.getElementById("editTitle");
+  const editDate = document.getElementById("editDate");
+  const editLocation = document.getElementById("editLocation");
+  const editCategory = document.getElementById("editCategory");
+  const editDesc = document.getElementById("editDesc");
+
+  /* ------------------------------
+     PASSWORD PROMPT
+  ------------------------------ */
+  function askPassword() {
+    const stored = readPass();
+    const pw = prompt("Enter admin password to access dashboard:");
+
+    if (pw === null) {
+      window.location.href = "index.html";
+      return false;
+    }
+    if (pw !== stored) {
+      alert("Wrong password!");
+      window.location.href = "index.html";
+      return false;
+    }
+    return true;
+  }
+
+  if (!askPassword()) return;
+
+  /* ------------------------------
+     SIDEBAR + LOGOUT
+  ------------------------------ */
+  toggleSidebar?.addEventListener("click", () =>
+    sidebar.classList.toggle("hidden")
+  );
+  logoutBtn?.addEventListener("click", () => {
+    window.location.href = "index.html";
+  });
+
+  /* ------------------------------
+     TAB SWITCHING
+  ------------------------------ */
+  function showTab(tab) {
+    panels.forEach((p) => p.classList.add("hidden"));
+    document.getElementById(tab).classList.remove("hidden");
+
+    tabBtns.forEach((b) =>
+      b.classList.remove("bg-accent/10", "text-accent")
+    );
+    document
+      .querySelector(`[data-tab="${tab}"]`)
+      .classList.add("bg-accent/10", "text-accent");
+
+    if (tab === "overview") renderOverview();
+    if (tab === "items") {
+      populateCategoryFilter();
+      renderItems();
+    }
+    if (tab === "deleted") renderDeleted();
+  }
+
+  tabBtns.forEach((btn) =>
+    btn.addEventListener("click", () => showTab(btn.dataset.tab))
+  );
+
+  // Default tab
+  showTab("overview");
+
+  /* ------------------------------
+     OVERVIEW → PIE CHART
+  ------------------------------ */
+  function renderOverview() {
+    const items = readStore();
+
+    statTotal.textContent = items.length;
+    statOpen.textContent = items.filter((i) => !i.resolved).length;
+    statFound.textContent = items.filter((i) => i.resolved).length;
+    lastUpdated.textContent = new Date().toLocaleString();
+
+    const counts = {};
+    items.forEach((i) => {
+      const c = i.category || "Other";
+      counts[c] = (counts[c] || 0) + 1;
+    });
+
+    const labels = Object.keys(counts);
+    const data = Object.values(counts);
+
+    // Destroy previous chart safely
+    if (categoryChart) categoryChart.destroy();
+
+    categoryChart = new Chart(chartCtx, {
+      type: "pie",
+      data: {
+        labels,
+        datasets: [
+          {
+            data,
+            backgroundColor: labels.map(
+              () =>
+                `hsl(${Math.floor(Math.random() * 360)}, 70%, 55%)`
+            ),
+          },
+        ],
+      },
+      options: {
+        maintainAspectRatio: false,
+        responsive: true,
+        plugins: {
+          legend: {
+            display: true,
+            position: "bottom",
+            labels: { color: "#fff" },
+          },
+        },
+      },
+    });
+  }
+
+  /* ------------------------------
+     CATEGORY FILTER
+  ------------------------------ */
+  function populateCategoryFilter() {
+    const items = readStore();
+    const cats = [...new Set(items.map((i) => i.category || "Other"))];
+
+    filterCategory.innerHTML = `<option value="">All Categories</option>`;
+    cats.forEach((c) => {
+      const opt = document.createElement("option");
+      opt.value = c;
+      opt.textContent = c;
+      filterCategory.appendChild(opt);
+    });
+  }
+
+  /* ------------------------------
+     RENDER ITEMS LIST
+  ------------------------------ */
+  function renderItems() {
+    const all = readStore().slice().reverse();
+    const q = (searchItems.value || "").toLowerCase();
+    const tf = filterType.value;
+    const cf = filterCategory.value;
+
+    itemsTable.innerHTML = "";
+
+    const filtered = all.filter((it) => {
+      if (tf && it.type !== tf) return false;
+      if (cf && (it.category || "") !== cf) return false;
+      if (
+        q &&
+        !(
+          (it.title || "").toLowerCase().includes(q) ||
+          (it.location || "").toLowerCase().includes(q)
+        )
+      )
+        return false;
+      return true;
+    });
+
+    if (!filtered.length) {
+      itemsTable.innerHTML = `<div class="text-slate-400">No items found.</div>`;
+      return;
+    }
+
+    filtered.forEach((item) => {
+      const card = document.createElement("div");
+      card.className =
+        "flex gap-4 items-start bg-white/5 border border-white/10 p-4 rounded-xl";
+
+      card.innerHTML = `
+        <div class="w-20 h-20 rounded-lg overflow-hidden bg-slate-700/30 flex-shrink-0">
+          <img src="${item.photo ||
+            "https://via.placeholder.com/160"}" class="w-full h-full object-cover" />
+        </div>
+
+        <div class="flex-1">
+          <div class="text-lg font-semibold">
+            ${item.type ? item.type.toUpperCase() + ": " : ""}${item.title}
+          </div>
+
+          <div class="text-sm text-slate-300 mt-1">
+            📍 ${item.location || ""} • 📅 ${item.date ||
+        ""} • 👤 ${item.contactName || ""}
+          </div>
+
+          <p class="mt-3 text-sm text-slate-200">
+            ${item.description || ""}
+          </p>
+
+          <div class="mt-3 flex items-center gap-3">
+            <button class="editBtn px-3 py-1 bg-white/10 rounded">Edit</button>
+            <button class="moveBtn px-3 py-1 bg-yellow-500/20 rounded">Bin</button>
+            <button class="permBtn px-3 py-1 bg-red-600/20 rounded text-red-300">Delete</button>
+            <button class="markBtn px-3 py-1 bg-green-600/20 rounded">
+              ${item.resolved ? "Unresolve" : "Mark Found"}
+            </button>
+          </div>
+        </div>
+      `;
+
+      itemsTable.appendChild(card);
+
+      // handlers
+      card.querySelector(".editBtn").onclick = () => openEditModal(item);
+
+      card.querySelector(".moveBtn").onclick = () => {
+        if (!confirm("Move this item to recycle bin?")) return;
+        writeStore(readStore().filter((x) => x.id !== item.id));
+        writeDeleted([...readDeleted(), { ...item, deletedAt: Date.now() }]);
+        renderItems();
+        renderOverview();
+        populateCategoryFilter();
+      };
+
+      card.querySelector(".permBtn").onclick = () => {
+        const pw = prompt("Enter admin password:");
+        if (pw !== readPass()) return alert("Wrong password.");
+        if (!confirm("Permanently delete this item?")) return;
+        writeStore(readStore().filter((x) => x.id !== item.id));
+        renderItems();
+        renderOverview();
+        populateCategoryFilter();
+      };
+
+      card.querySelector(".markBtn").onclick = () => {
+        const arr = readStore();
+        const idx = arr.findIndex((x) => x.id === item.id);
+        if (idx !== -1) {
+          arr[idx].resolved = !arr[idx].resolved;
+          writeStore(arr);
+        }
+        renderItems();
+        renderOverview();
+      };
+    });
+  }
+
+  /* ------------------------------
+     RENDER RECYCLE BIN
+  ------------------------------ */
+  function renderDeleted() {
+    const del = readDeleted().slice().reverse();
+    deletedList.innerHTML = "";
+
+    if (!del.length) {
+      deletedList.innerHTML = `<div class="text-slate-400">Recycle bin is empty.</div>`;
+      return;
+    }
+
+    del.forEach((item) => {
+      const card = document.createElement("div");
+      card.className =
+        "flex gap-4 items-start bg-white/5 border border-white/10 p-4 rounded-xl";
+
+      card.innerHTML = `
+        <div class="w-20 h-20 rounded-lg overflow-hidden bg-slate-700/30">
+          <img src="${item.photo ||
+            "https://via.placeholder.com/160"}" class="w-full h-full object-cover">
+        </div>
+
+        <div class="flex-1">
+          <div class="text-lg font-semibold">${item.title}</div>
+          <div class="text-sm text-slate-300 mt-1">
+            Deleted: ${new Date(item.deletedAt).toLocaleString()}
+          </div>
+
+          <p class="mt-3 text-sm text-slate-200">${item.description}</p>
+
+          <div class="mt-3 flex items-center gap-3">
+            <button class="restoreBtn px-3 py-1 bg-green-600/20 rounded">Restore</button>
+            <button class="permBtn px-3 py-1 bg-red-600/20 rounded text-red-300">
+              Delete
+            </button>
+          </div>
+        </div>
+      `;
+
+      deletedList.appendChild(card);
+
+      card.querySelector(".restoreBtn").onclick = () => {
+        if (!confirm("Restore this item?")) return;
+        writeDeleted(readDeleted().filter((x) => x.id !== item.id));
+        writeStore([...readStore(), item]);
+        renderDeleted();
+        renderOverview();
+        populateCategoryFilter();
+      };
+
+      card.querySelector(".permBtn").onclick = () => {
+        const pw = prompt("Enter admin password:");
+        if (pw !== readPass()) return alert("Wrong password.");
+        if (!confirm("Permanently delete item?")) return;
+        writeDeleted(readDeleted().filter((x) => x.id !== item.id));
+        renderDeleted();
+        renderOverview();
+        populateCategoryFilter();
+      };
+    });
+  }
+
+  /* ------------------------------
+     EMPTY BIN + CLEAR ALL
+  ------------------------------ */
+  emptyBin.onclick = () => {
+    const pw = prompt("Enter admin password:");
+    if (pw !== readPass()) return alert("Wrong password.");
+    if (!confirm("Empty the entire recycle bin?")) return;
+    writeDeleted([]);
+    renderDeleted();
+  };
+
+  clearAllBtn.onclick = () => {
+    const pw = prompt("Enter admin password:");
+    if (pw !== readPass()) return alert("Wrong password.");
+    if (!confirm("Delete ALL data permanently?")) return;
+    writeStore([]);
+    writeDeleted([]);
+    renderItems();
+    renderOverview();
+  };
+
+  /* ------------------------------
+     EXPORT / IMPORT
+  ------------------------------ */
+  exportBtn.onclick = () => {
+    const blob = new Blob(
+      [
+        JSON.stringify(
+          {
+            items: readStore(),
+            deleted: readDeleted(),
+            exportedAt: Date.now(),
+          },
+          null,
+          2
+        ),
+      ],
+      { type: "application/json" }
+    );
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "lost-found-export.json";
+    a.click();
+  };
+
+  importBtn.onclick = () => importFile.click();
+
+  importFile.onchange = (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      try {
+        const parsed = JSON.parse(r.result);
+        if (Array.isArray(parsed.items)) writeStore(parsed.items);
+        if (Array.isArray(parsed.deleted)) writeDeleted(parsed.deleted);
+        renderOverview();
+        renderItems();
+        renderDeleted();
+      } catch {
+        alert("Invalid JSON file!");
+      }
+    };
+    r.readAsText(f);
+  };
+
+  /* ------------------------------
+     EDIT MODAL
+  ------------------------------ */
+  function openEditModal(item) {
+    editId.value = item.id;
+    editTitle.value = item.title;
+    editDate.value = item.date;
+    editLocation.value = item.location;
+    editCategory.value = item.category;
+    editDesc.value = item.description;
+
+    modal.style.display = "flex";
+    modal.classList.remove("hidden");
+  }
+
+  modalClose.onclick = () => {
+    modal.style.display = "none";
+    modal.classList.add("hidden");
+  };
+
+  editForm.onsubmit = (e) => {
+    e.preventDefault();
+    const id = editId.value;
+
+    const arr = readStore();
+    const idx = arr.findIndex((x) => x.id === id);
+    if (idx === -1) return;
+
+    arr[idx].title = editTitle.value;
+    arr[idx].date = editDate.value;
+    arr[idx].location = editLocation.value;
+    arr[idx].category = editCategory.value;
+    arr[idx].description = editDesc.value;
+
+    writeStore(arr);
+    modal.style.display = "none";
+    modal.classList.add("hidden");
+
+    renderItems();
+    renderOverview();
+    populateCategoryFilter();
+  };
+
+  /* ------------------------------
+     PASSWORD CHANGE
+  ------------------------------ */
+  changePassBtn.onclick = () => {
+    const cur = currentPass.value;
+    const nw = newPass.value;
+    const cf = confirmPass.value;
+
+    if (!cur || !nw || !cf) {
+      passMsg.textContent = "Fill all fields.";
+      passMsg.className = "text-sm text-red-400 mt-3";
+      return;
+    }
+    if (cur !== readPass()) {
+      passMsg.textContent = "Current password incorrect.";
+      passMsg.className = "text-sm text-red-400 mt-3";
+      return;
+    }
+    if (nw !== cf) {
+      passMsg.textContent = "Passwords do not match.";
+      passMsg.className = "text-sm text-red-400 mt-3";
+      return;
+    }
+
+    setPass(nw);
+    passMsg.textContent = "Password updated!";
+    passMsg.className = "text-sm text-green-400 mt-3";
+  };
+
+  /* ------------------------------
+     FILTER EVENTS
+  ------------------------------ */
+  filterType.onchange = () => renderItems();
+  filterCategory.onchange = () => renderItems();
+  searchItems.oninput = () => renderItems();
+  clearFilters.onclick = () => {
+    filterType.value = "";
+    filterCategory.value = "";
+    searchItems.value = "";
+    renderItems();
+  };
+
+  /* ------------------------------
+     REFRESH
+  ------------------------------ */
+  refreshBtn.onclick = () => {
+    renderOverview();
+    renderItems();
+    renderDeleted();
+    populateCategoryFilter();
+  };
+
+  /* ------------------------------
+     INITIAL RENDER
+  ------------------------------ */
+  populateCategoryFilter();
+  renderOverview();
+  renderItems();
+  renderDeleted();
+
+})();
+</script>
+</body>
+</html>
