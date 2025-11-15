@@ -1,0 +1,19 @@
+[build]
+  # Publish directory - where the static files are located
+  publish = "baby3"
+  
+  # No build command needed for static HTML site
+  command = ""
+
+# Settings for form handling (if needed in future)
+[build.environment]
+  # No environment variables needed for static site
+
+# Headers for security (recommended)
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
